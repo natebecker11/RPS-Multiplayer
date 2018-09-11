@@ -12,24 +12,41 @@
   
 <h1>Multiplayer Rock Paper Scissors</h1>
 
-<div id='yourChoice'></div>
-<div id='opponentChoice'></div>
-<p id='whoWon'></p>
-<p id='opponentInfo'></p>
 
+<div id='loginScreen'>
+  <form id='loginForm'>
+    <input type='text' id='loginText' placeholder='Choose A Username'>
+    <input type='submit' id='loginButton' value='Submit'>
+  </form>
 
-<div id='rpsButtons'>
-  <button id='rockBtn'>Rock</button>
-  <button id='paperBtn'>Paper</button>
-  <button id='scissorsBtn'>Scissors</button>  
 </div>
 
-<div id='chatSection'>
+
+<div id='fightScreen' class='hidden'>
+  <div id='userArea'>
+    <div id='userName'></div>
+    <div id='userChoice'></div>
+  </div>
+  <div id='oppoArea'>
+    <div id='oppoName'></div>
+    <div id='oppoChoice'></div>
+  </div>
   
+  <div id='whoWon'></div>
+  
+  <!-- Buttons for gameplay -->
+  <div id='rpsButtons'>
+    <button id='rockBtn'>Rock</button>
+    <button id='paperBtn'>Paper</button>
+    <button id='scissorsBtn'>Scissors</button>  
+  </div>
+
+  <div id='chatSection'>
+    
+  </div>
+
+
 </div>
-
-
-
 
 
 
