@@ -41,18 +41,29 @@ activeUsersRef.on('value', function(snap) {
 
 
 // TODO: display names go to datastoreinstead of auth
-// listener for when a user signs in
+// when the login button is clicked
 document.querySelector('#loginButton').onclick = function(event) {
+  // prevent page reload on click
   event.preventDefault();
+  // var for entered username
   var userDisplayName = document.querySelector('#loginText').value;
+  // if a value is entered
   if (userDisplayName) {
-    fAuth.signInAnonymously().catch(function(error) {
+    // run the firebase anon auth method
+    fAuth.signInAnonymously().then(function(snap) {
+        var uid = snap.user.uid;
+        console.log(snap.user.uid);
+        // on the database
+        database.ref('/' + uid + '/').set({
+            displayName: userDisplayName,
+            userID: uid
+          })
+      })
+      // catch errors
+      .catch(function(error) {      
       var errorCode = error.code;
       var errorMessage = error.message;
       console.log(errorCode + errorMessage);
-    })
-    fAuth.currentUser.updateProfile({
-      displayName: userDisplayName
     })
   } else {
     alert('Please enter a name!')
@@ -69,7 +80,8 @@ fAuth.onAuthStateChanged(function(user) {
     //       displayName: userDisplayName
     //   })
     // }
-    document.querySelector('#userName').textContent = getUserName();
+    console.log(fAuth.currentUser.uid)
+    document.querySelector('#userName').textContent = database.ref('/' + user.uid + '/').displayName;
     document.querySelector('#loginScreen').classList.add('hidden');
     document.querySelector('#fightScreen').classList.remove('hidden');
     
