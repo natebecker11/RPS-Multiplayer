@@ -10,5 +10,49 @@
 </head>
 <body>
   
+<h1>Multiplayer Rock Paper Scissors</h1>
+
+<div id='yourChoice'></div>
+<div id='opponentChoice'></div>
+<p id='whoWon'></p>
+<p id='opponentInfo'></p>
+
+
+<div id='rpsButtons'>
+  <button id='rockBtn'>Rock</button>
+  <button id='paperBtn'>Paper</button>
+  <button id='scissorsBtn'>Scissors</button>  
+</div>
+
+<div id='chatSection'>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script src="https://www.gstatic.com/firebasejs/5.4.2/firebase.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyCb4HfrWj3U-i76SFGIA-dvzfc3mH4kye4",
+      authDomain: "rps-multiplayer-518df.firebaseapp.com",
+      databaseURL: "https://rps-multiplayer-518df.firebaseio.com",
+      projectId: "rps-multiplayer-518df",
+      storageBucket: "rps-multiplayer-518df.appspot.com",
+      messagingSenderId: "830875471983"
+    };
+    firebase.initializeApp(config);
+  </script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src='assets/js/script.js'></script>
 </body>
 </html>
