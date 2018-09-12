@@ -11,6 +11,14 @@ var connectedRef = database.ref('.info/connected');
 // flag for whether the user's name is being displayed
 var nameDisplayed = false;
 
+// array for resolving gameplay
+var gameArray = ['p', 'r', 's']
+
+
+// function to abbreviate document.queryselector
+var docQS = function(element) {
+  return document.querySelector(element)
+}
 
 
 
@@ -43,7 +51,7 @@ connectedRef.on('value', function(snap) {
 
 
 
-// TODO: display names go to datastoreinstead of auth
+
 // when the login button is clicked
 document.querySelector('#loginButton').onclick = function(event) {
   // prevent page reload on click
@@ -100,7 +108,12 @@ fAuth.onAuthStateChanged(function(user) {
     
     // document.querySelector('#userName').textContent = database.ref('/' + user.uid + '/').displayName;
     document.querySelector('#loginScreen').classList.add('hidden');
-    document.querySelector('#fightScreen').classList.remove('hidden');
+    document.querySelector('#waitScreen').classList.remove('hidden');
+
+    // check to see if there is room for the user
+      // send to game if yes
+    // else
+      // try again button
     
     
   } else {
@@ -111,6 +124,83 @@ fAuth.onAuthStateChanged(function(user) {
 }, function() {
   console.log('its over now')
 })
+
+
+
+
+// function to send the user into an active game
+
+
+
+// function to check whether there is room for a user
+var gameReadyCheck = function() {
+  database.ref('/currentGame/').once('value').then(function(snap) {
+    var current = snap.val();
+    var uid = fAuth.currentUser.uid;
+    var name = fAuth.currentUser.displayName;
+    var updateStat = function(message) {
+      docQS('#statusDisplay').textContent = message;
+    }
+    console.log(snap.val());
+    // if game already has 2 users
+    if (current.user1 && current.user2) {
+      // function to tell the user to wait
+      console.log('Not enough room!')
+      updateStat('Game Is Full! You Can Try Again Soon!');
+    // if game has only 1 player
+    } else if (current.user1) {
+      // function to add user as user2
+      console.log('you are in, get ready to play!')
+      // create a new ref and store the userID and name within
+      database.ref('/currentGame/user2/').set({
+        userID: uid,
+        displayName: name
+      })
+      updateStat('You Are In! Get Ready To Play!')
+    // if game has no players
+    } else {
+      // function to add user as user1
+      console.log('you are in, searching for opponent!')
+      // create a new ref and set the userid and name within
+      database.ref('/currentGame/user1/').set({
+        userID: uid,
+        displayName: name
+      })
+      // update the status of the user on their screen
+      updateStat('You Are In! Searching For Opponent!');
+    }
+  })
+}
+
+
+// function to send the user's choice to the server
+
+
+// function to check whether both choices have been entered
+
+// function to evaluate a winner
+
+// function to tally a win/loss/draw
+
+// function to 
+
+
+
+
+
+
+// listener for the currentGame ref
+database.ref('/currentGame/').on('value', function(snap) {
+  var current = snap.val();
+  if (current.user1 && current.user2) {
+    // launch the game
+  }
+})
+
+
+// listener for Start Game button
+document.querySelector('#startBtn').onclick = function() {gameReadyCheck()}
+
 
 
 
