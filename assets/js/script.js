@@ -8,6 +8,9 @@ var activeUsersRef = database.ref('/connections/');
 // var for tracking connection changes
 var connectedRef = database.ref('.info/connected');
 
+// flag for whether the user's name is being displayed
+var nameDisplayed = false;
+
 
 
 
@@ -34,9 +37,9 @@ connectedRef.on('value', function(snap) {
 
 
 // listener for when the connections list changes
-activeUsersRef.on('value', function(snap) {
-  console.log(snap.val())
-})
+// activeUsersRef.on('value', function(snap) {
+//   console.log(snap.val())
+// })
 
 
 
@@ -47,17 +50,24 @@ document.querySelector('#loginButton').onclick = function(event) {
   event.preventDefault();
   // var for entered username
   var userDisplayName = document.querySelector('#loginText').value;
+  
   // if a value is entered
   if (userDisplayName) {
+    // display the user's name 
+    document.querySelector('#userName').textContent = userDisplayName;
+    // flag that the name is displayed
+    nameDisplayed = true;
     // run the firebase anon auth method
     fAuth.signInAnonymously().then(function(snap) {
-        var uid = snap.user.uid;
-        console.log(snap.user.uid);
+        var uid = snap.user.uid;        
         // on the database
-        database.ref('/' + uid + '/').set({
+        database.ref('/' + uid + '/info/').set({
             displayName: userDisplayName,
             userID: uid
           })
+        fAuth.currentUser.updateProfile({
+          displayName: userDisplayName
+        })
       })
       // catch errors
       .catch(function(error) {      
@@ -80,20 +90,29 @@ fAuth.onAuthStateChanged(function(user) {
     //       displayName: userDisplayName
     //   })
     // }
-    console.log(fAuth.currentUser.uid)
-    document.querySelector('#userName').textContent = database.ref('/' + user.uid + '/').displayName;
+    // console.log('')
+    if (!nameDisplayed) {
+      console.log('displaying user name')
+      document.querySelector('#userName').textContent = fAuth.currentUser.displayName;
+    }
+    
+    console.log('dingo')
+    
+    // document.querySelector('#userName').textContent = database.ref('/' + user.uid + '/').displayName;
     document.querySelector('#loginScreen').classList.add('hidden');
     document.querySelector('#fightScreen').classList.remove('hidden');
     
-    console.log(fAuth.currentUser.displayName + ' is logged in.')
+    
   } else {
-    // user is signed out
+    console.log('signed out')
   }
 }, function(error) {
   console.log(error);
 }, function() {
   console.log('its over now')
 })
+
+
 
 // // auth code snippets
 // function signIn() {
