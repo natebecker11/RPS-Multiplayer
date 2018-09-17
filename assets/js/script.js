@@ -11,8 +11,7 @@ var connectedRef = database.ref('.info/connected');
 // flag for whether the user's name is being displayed
 var nameDisplayed = false;
 
-// array for resolving gameplay
-var gameArray = ['p', 'r', 's']
+
 
 
 // function to abbreviate document.queryselector
@@ -152,6 +151,31 @@ var authUserNum = function() {
 // function to check whether both choices have been entered
 
 // function to evaluate a winner
+var evalWinner = function() {
+  // function to get the choice for a user
+  var getChoice = function(user) {
+    var choice;
+    database.ref('/currentGame/' + user + '/choice/').once('value', function(snap) {
+      // console.log(snap.val()['choice']);
+      return choice = snap.val()['choice'];
+    })
+    return choice;
+  }
+  // bind the choice of each user  
+  var user1Choice = getChoice('user1');
+  var user2Choice = getChoice('user2');
+  // console.log('user1 chose: ' + user1Choice + ' user 2 chose: ' + user2Choice)
+  // RPS functionality
+  var playRPS = function(choice1, choice2) {
+    if (choice1 === choice2) {return 'tie'}
+    // array for resolving gameplay
+    var gameArray = ['paper', 'scissors', 'rock']
+    if (choice1 === 'rock' && choice2 === 'paper') {return 'user2'}
+    if (gameArray.indexOf(choice1) < gameArray.indexOf(choice2)) {return 'user2'}
+    else return 'user1';
+  }
+  return playRPS(user1Choice, user2Choice)
+}
 
 // function to tally a win/loss/draw
 
@@ -167,6 +191,7 @@ database.ref('/currentGame/').on('value', function(snap) {
   var current = snap.val();
   if (current.user1 && current.user2) {
     // launch the game
+    console.log('the game begins')
   }
 })
 
