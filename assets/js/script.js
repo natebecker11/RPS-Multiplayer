@@ -1,9 +1,3 @@
-// TODO: show/hide user choices one both choices are in
-// TODO: tally wins and losses
-// TODO: disable buttons after choice is made, enable after round is done
-// TODO:
-
-
 
 // var for the database
 var database = firebase.database();
@@ -38,6 +32,18 @@ function getUserName() {
 // Returns true if a user is signed-in.
 function isUserSignedIn() {
   return !!fAuth.currentUser;
+}
+
+// function to capitalize the first letter of a string
+var toCaps = function(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1); 
+}
+
+// function to reset the text content of any number of elements
+var resetText = function(...args) {
+  args.forEach(function(element) {
+    docQS('#' + element).textContent = ''
+  })
 }
 
 // listener for when a user connects
@@ -80,15 +86,32 @@ activeUsersRef.on('child_removed', function(child) {
   })
   // console.log(user1Key + ' ' + user2Key);
   if (curConnectKey === user2Key || curConnectKey === user1Key) {
-    database.ref('/currentGame/user1/').remove();
-    database.ref('/currentGame/user2/').remove();
-    database.ref('/currentGame/choices/').remove();
+    
     if (authUserNum()) {
       docQS('#fightScreen').classList.add('hidden')
       docQS('#waitScreen').classList.remove('hidden')
       docQS('#statusDisplay').textContent = 'Your Opponent Left! Click To Start Another Game!'
-      docQS('#whoWon').textContent = '';
+      // docQS('#whoWon').textContent = '';
+      docQS('#startBtn').disabled = false;
+      resetText('user1Name', 'user1Choice', 'user1Wins', 'user2Name', 'user2Wins', 'user2Choice', 'whoWon', 'tiesWins')
+      
     }
+    database.ref('/currentGame/user1/').remove();
+    database.ref('/currentGame/user2/').remove();
+    database.ref('/currentGame/choices/').remove();
+    database.ref('/gameRunningFlag/').set({
+      running: false
+    })
+    // reset the tally
+    database.ref('/currentGame/tally/ties/').set({
+      num: 0
+    })
+    database.ref('/currentGame/tally/user1/').set({
+      num: 0
+    })
+    database.ref('/currentGame/tally/user2/').set({
+      num: 0
+    })
   }
 })
 
@@ -111,8 +134,6 @@ fAuth.onAuthStateChanged(function(user) {
   console.log('its over now')
 })
 
-// function to send the user into an active game
-
 // function to check whether there is room for a user
 var gameReadyCheck = function() {
   database.ref('/currentGame/').once('value').then(function(snap) {
@@ -126,12 +147,12 @@ var gameReadyCheck = function() {
     // if game already has 2 users
     if (current.user1 && current.user2) {
       // function to tell the user to wait
-      console.log('Not enough room!')
+      // console.log('Not enough room!')
       updateStat('Game Is Full! You Can Try Again Soon!');
     // if game has only 1 player
     } else if (current.user1) {
       // function to add user as user2
-      console.log('you are in, get ready to play!')
+      // console.log('you are in, get ready to play!')
       // create a new ref and store the userID and name within
       database.ref('/currentGame/user2/').set({
         userID: uid,
@@ -139,10 +160,11 @@ var gameReadyCheck = function() {
         key: curConnectKey
       })
       updateStat('You Are In! Get Ready To Play!')
+      docQS('#startBtn').disabled = true;
     // if game has no players
     } else {
       // function to add user as user1
-      console.log('you are in, searching for opponent!')
+      // console.log('you are in, searching for opponent!')
       // create a new ref and set the userid and name within
       database.ref('/currentGame/user1/').set({
         userID: uid,
@@ -151,6 +173,7 @@ var gameReadyCheck = function() {
       })
       // update the status of the user on their screen
       updateStat('You Are In! Searching For Opponent!');
+      docQS('#startBtn').disabled = true;
     }
   })
 }
@@ -176,7 +199,7 @@ var authUserNum = function() {
   var currentGame = database.ref('/currentGame/');
   currentGame.once('value', function(snap) {
     for (var user in snap.val()) {
-      // console.log(snap.val()[user]['userID']);
+      console.log(snap.val()[user]['userID']);
       if (snap.val()[user]['userID'] === currentID) {
         return userNumber = user;
       }
@@ -199,10 +222,16 @@ var evalWinner = function() {
   // bind the choice of each user  
   var user1Choice = getChoice('user1');
   var user2Choice = getChoice('user2');
+  // display the user choices on screen
+  
+  docQS('#user1Choice').classList.remove('hidden');
+  docQS('#user1Choice').textContent = 'Last Choice: ' + toCaps(user1Choice);
+  docQS("#user2Choice").classList.remove('hidden');
+  docQS("#user2Choice").textContent = 'Last Choice: ' + toCaps(user2Choice);  
   // console.log('user1 chose: ' + user1Choice + ' user 2 chose: ' + user2Choice)
   // RPS functionality
   var playRPS = function(choice1, choice2) {
-    if (choice1 === choice2) {return 'tie'}
+    if (choice1 === choice2) {return 'ties'}
     // array for resolving gameplay
     var gameArray = ['paper', 'scissors', 'rock']
     if (choice1 === 'rock' && choice2 === 'paper') {return 'user2'}
@@ -229,20 +258,11 @@ database.ref('/currentGame/').on('value', function(snap) {
     // launch the game
     docQS('#waitScreen').classList.add('hidden');
     docQS('#fightScreen').classList.remove('hidden');
-    // reset the tally
-    database.ref('/currentGame/tally/ties/').set({
-      num: 0
-    })
-    database.ref('/currentGame/tally/user1/').set({
-      num: 0
-    })
-    database.ref('/currentGame/tally/user2/').set({
-      num: 0
-    })
+    
     // display the number of wins losses and ties
-    docQS('#user1Wins').textContent = 'Wins: 0'
-    docQS('#user2Wins').textContent = 'Wins: 0'
-    docQS('#tieWins').textContent = 'Ties: 0'
+    // docQS('#user1Wins').textContent = 'Wins: 0'
+    // docQS('#user2Wins').textContent = 'Wins: 0'
+    // docQS('#tieWins').textContent = 'Ties: 0'
     // display the user names
     docQS('#user1Name').textContent = current.user1['displayName'];
     docQS('#user2Name').textContent = current.user2['displayName'];
@@ -250,25 +270,47 @@ database.ref('/currentGame/').on('value', function(snap) {
   }
 })
 
+// function to handle scorekeeping, takes an argument for whose score to increment (user1/user2/ties)
+var keepScore = function(winner) {
+  // bind a value for the score
+  var oldScore;
+  // grab the value from the DB for the winner, and return it
+  database.ref('/currentGame/tally/' + winner + '/').once('value', function(snap) {
+    return oldScore = snap.val()['num'];
+  })
+  // increment
+  newScore = oldScore + 1;
+  // set it on the DB
+  database.ref('/currentGame/tally/' + winner + '/').set({
+    num: newScore
+  })
+  // display on the screen
+  docQS('#' + winner + 'Wins').textContent = newScore;
+}
+
 // database listener for gameplay
-database.ref('/currentGame/choices/').on('value', function(snap) {  
+database.ref('/currentGame/choices/').on('value', function(snap) {
   // if both players have made a choice  
   if (snap.val() && Object.keys(snap.val()).length === 2) {
+    
     // run the rps eval function, binding the result to winner
     var winner = evalWinner();
+    keepScore(winner);
     // cleanup this game's choices
     database.ref('/currentGame/choices/').remove()
     database.ref('/currentGame/user1/choice/').remove()
     database.ref('/currentGame/user2/choice/').remove()
+    
     // check for a tie
-    if (winner === 'tie') {
+    if (winner === 'ties') {
       console.log('its a tie!')
       docQS("#whoWon").textContent = 'It is a tie!'
+    
       // get the current number of ties from the DB
       // increment by one
       // set the new number of ties on the DB
       // display new tie count
-      database.ref('/currentGame/tally/').set
+      // database.ref('/currentGame/tally/').set
     }
     // get the displayname of the winner
     else {
