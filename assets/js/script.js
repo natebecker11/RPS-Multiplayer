@@ -123,8 +123,14 @@ var gameReadyCheck = function() {
 
 // function to send the user's choice to the server
 var chooseRPS = function(choice) {
-  console.log(choice)
-  database.ref('/currentGame/')
+  var user = authUserNum() || 'notAUser'
+  
+  database.ref('/currentGame/' + user + '/choice/').set({
+    choice: choice
+  })
+  database.ref('/currentGame/choices/').push({
+    chosen: 'yes'
+  })
 }
 
 // function to authenticate which user a user is
@@ -164,6 +170,17 @@ database.ref('/currentGame/').on('value', function(snap) {
   }
 })
 
+// database listener for gameplay
+database.ref('/currentGame/choices/').on('value', function(snap) {
+  // bind the current user
+  var player = authUserNum();
+  // check if it's user1. We only want to evaluate the user choices once, so we only do this for user1, not user1/user2
+  if (player !== 'user1') return;
+  // if both players have made a choice  
+  if (Object.keys(snap.val()).length === 2) {
+    // run the rps eval function
+  }
+})
 
 // listener for Start Game button
 document.querySelector('#startBtn').onclick = function() {gameReadyCheck()}
@@ -209,7 +226,7 @@ document.querySelector('#loginButton').onclick = function(event) {
 var gameplayBtns = document.querySelectorAll('.gameplayBtn')
 gameplayBtns.forEach(function(element) {
   element.addEventListener('click', function(event) {
-    chooseRPS(this.textContent)
+    chooseRPS(this.textContent.toLowerCase())
   })
 })
 
