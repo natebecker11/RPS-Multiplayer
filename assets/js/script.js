@@ -1,3 +1,10 @@
+// TODO: show/hide user choices one both choices are in
+// TODO: tally wins and losses
+// TODO: disable buttons after choice is made, enable after round is done
+// TODO:
+
+
+
 // var for the database
 var database = firebase.database();
 // var for the auth
@@ -11,6 +18,8 @@ var connectedRef = database.ref('.info/connected');
 // flag for whether the user's name is being displayed
 var nameDisplayed = false;
 
+// var for current connection key
+var curConnectKey = '';
 
 
 
@@ -33,33 +42,63 @@ function isUserSignedIn() {
 
 // listener for when a user connects
 connectedRef.on('value', function(snap) {
-
   if (snap.val()) {
-    // add the user to the connections list
+
+    // var currentUID = 'temp';
+    // if (isUserSignedIn()) {
+    //   currentUID = fAuth.currentUser.uid;
+    // }
+    // // add the user to the connections list
     var userConnected = activeUsersRef.push(true);
+    // console.log(Object.keys(snap.val()))    
     // remove from the listwhen they disconnect
     userConnected.onDisconnect().remove();
   }
 })
 
 
-// listener for when the connections list changes
-// activeUsersRef.on('value', function(snap) {
-//   console.log(snap.val())
-// })
+// listener for the first time a child is added to the connections list
+activeUsersRef.once('child_added', function(snap) {
+  // console.log(snap.key)
+  return curConnectKey = snap.key;
+})
 
-
-
-
-
+// listener for when a child is removed from the connections list
+activeUsersRef.on('child_removed', function(child) {
+  console.log(child.key);
+  var user1Key;
+  var user2Key;
+  database.ref('/currentGame/user1/').once('value', function(snap) {
+    if (snap.val()) {
+      return user1Key = snap.val()['key'];
+    }
+  })
+  database.ref('/currentGame/user2/').once('value', function(snap) {
+    if (snap.val()) {
+      return user2Key = snap.val()['key'];
+    }
+  })
+  // console.log(user1Key + ' ' + user2Key);
+  if (curConnectKey === user2Key || curConnectKey === user1Key) {
+    database.ref('/currentGame/user1/').remove();
+    database.ref('/currentGame/user2/').remove();
+    database.ref('/currentGame/choices/').remove();
+    if (authUserNum()) {
+      docQS('#fightScreen').classList.add('hidden')
+      docQS('#waitScreen').classList.remove('hidden')
+      docQS('#statusDisplay').textContent = 'Your Opponent Left! Click To Start Another Game!'
+      docQS('#whoWon').textContent = '';
+    }
+  }
+})
 
 // fAuth listener for login status change
 fAuth.onAuthStateChanged(function(user) {  
   if (user) {    
-    if (!nameDisplayed) {
-      console.log('displaying user name')
-      document.querySelector('#userName').textContent = fAuth.currentUser.displayName;
-    }    
+    // if (!nameDisplayed) {
+    //   console.log('displaying user name')
+    //   document.querySelector('#userName').textContent = fAuth.currentUser.displayName;
+    // }    
     // document.querySelector('#userName').textContent = database.ref('/' + user.uid + '/').displayName;
     document.querySelector('#loginScreen').classList.add('hidden');
     document.querySelector('#waitScreen').classList.remove('hidden');
@@ -72,12 +111,7 @@ fAuth.onAuthStateChanged(function(user) {
   console.log('its over now')
 })
 
-
-
-
 // function to send the user into an active game
-
-
 
 // function to check whether there is room for a user
 var gameReadyCheck = function() {
@@ -101,7 +135,8 @@ var gameReadyCheck = function() {
       // create a new ref and store the userID and name within
       database.ref('/currentGame/user2/').set({
         userID: uid,
-        displayName: name
+        displayName: name,
+        key: curConnectKey
       })
       updateStat('You Are In! Get Ready To Play!')
     // if game has no players
@@ -111,7 +146,8 @@ var gameReadyCheck = function() {
       // create a new ref and set the userid and name within
       database.ref('/currentGame/user1/').set({
         userID: uid,
-        displayName: name
+        displayName: name,
+        key: curConnectKey
       })
       // update the status of the user on their screen
       updateStat('You Are In! Searching For Opponent!');
@@ -119,14 +155,15 @@ var gameReadyCheck = function() {
   })
 }
 
-
 // function to send the user's choice to the server
 var chooseRPS = function(choice) {
+  // define if the current user is user1 or user2
   var user = authUserNum() || 'notAUser'
-  
+  // set their choice on the DB in their ref
   database.ref('/currentGame/' + user + '/choice/').set({
     choice: choice
   })
+  // flag that a choice has been made
   database.ref('/currentGame/choices/').push({
     chosen: 'yes'
   })
@@ -147,8 +184,6 @@ var authUserNum = function() {
   })
   return userNumber;
 }
-
-// function to check whether both choices have been entered
 
 // function to evaluate a winner
 var evalWinner = function() {
@@ -177,33 +212,73 @@ var evalWinner = function() {
   return playRPS(user1Choice, user2Choice)
 }
 
-// function to tally a win/loss/draw
-
-// function to 
-
-
-
-
-
-
-// listener for the currentGame ref
+// listener for the currentGame ref to start game when both users are in
 database.ref('/currentGame/').on('value', function(snap) {
   var current = snap.val();
-  if (current.user1 && current.user2) {
+  var gameRunningFlag;
+  database.ref('/gameRunningFlag/').once('value', function(snap2) {
+    if (snap2.val()) {
+      return gameRunningFlag = snap2.val()['running'];
+    }
+  })
+  if (current.user1 && current.user2 && !gameRunningFlag) {
+    database.ref('/gameRunningFlag/').set({
+      running: true
+    })
+    // console.log(snap.val())
     // launch the game
-    console.log('the game begins')
+    docQS('#waitScreen').classList.add('hidden');
+    docQS('#fightScreen').classList.remove('hidden');
+    // reset the tally
+    database.ref('/currentGame/tally/ties/').set({
+      num: 0
+    })
+    database.ref('/currentGame/tally/user1/').set({
+      num: 0
+    })
+    database.ref('/currentGame/tally/user2/').set({
+      num: 0
+    })
+    // display the number of wins losses and ties
+    docQS('#user1Wins').textContent = 'Wins: 0'
+    docQS('#user2Wins').textContent = 'Wins: 0'
+    docQS('#tieWins').textContent = 'Ties: 0'
+    // display the user names
+    docQS('#user1Name').textContent = current.user1['displayName'];
+    docQS('#user2Name').textContent = current.user2['displayName'];
+    
   }
 })
 
 // database listener for gameplay
-database.ref('/currentGame/choices/').on('value', function(snap) {
-  // bind the current user
-  var player = authUserNum();
-  // check if it's user1. We only want to evaluate the user choices once, so we only do this for user1, not user1/user2
-  if (player !== 'user1') return;
+database.ref('/currentGame/choices/').on('value', function(snap) {  
   // if both players have made a choice  
-  if (Object.keys(snap.val()).length === 2) {
-    // run the rps eval function
+  if (snap.val() && Object.keys(snap.val()).length === 2) {
+    // run the rps eval function, binding the result to winner
+    var winner = evalWinner();
+    // cleanup this game's choices
+    database.ref('/currentGame/choices/').remove()
+    database.ref('/currentGame/user1/choice/').remove()
+    database.ref('/currentGame/user2/choice/').remove()
+    // check for a tie
+    if (winner === 'tie') {
+      console.log('its a tie!')
+      docQS("#whoWon").textContent = 'It is a tie!'
+      // get the current number of ties from the DB
+      // increment by one
+      // set the new number of ties on the DB
+      // display new tie count
+      database.ref('/currentGame/tally/').set
+    }
+    // get the displayname of the winner
+    else {
+      var winnerName;
+      database.ref('/currentGame/' + winner + '/').once('value', function(snap) {
+        return winnerName = snap.val()['displayName'];
+      })
+      console.log('winner is ' + winnerName);
+      docQS('#whoWon').textContent = 'Winner Is: ' + winnerName;
+    }
   }
 })
 
@@ -215,14 +290,13 @@ document.querySelector('#loginButton').onclick = function(event) {
   // prevent page reload on click
   event.preventDefault();
   // var for entered username
-  var userDisplayName = document.querySelector('#loginText').value;
-  
+  var userDisplayName = document.querySelector('#loginText').value;  
   // if a value is entered
   if (userDisplayName) {
     // display the user's name 
-    document.querySelector('#userName').textContent = userDisplayName;
+    // document.querySelector('#userName').textContent = userDisplayName;
     // flag that the name is displayed
-    nameDisplayed = true;
+    // nameDisplayed = true;
     // run the firebase anon auth method
     fAuth.signInAnonymously().then(function(snap) {
         var uid = snap.user.uid;        
@@ -234,6 +308,7 @@ document.querySelector('#loginButton').onclick = function(event) {
         fAuth.currentUser.updateProfile({
           displayName: userDisplayName
         })
+        // location.reload();
       })
       // catch errors
       .catch(function(error) {      
@@ -250,7 +325,9 @@ document.querySelector('#loginButton').onclick = function(event) {
 // listener for the gameplay buttons
 var gameplayBtns = document.querySelectorAll('.gameplayBtn')
 gameplayBtns.forEach(function(element) {
-  element.addEventListener('click', function(event) {
+  // add an onclick event listener to all
+  element.addEventListener('click', function() {
+    // run the RPS function on the value of the button
     chooseRPS(this.textContent.toLowerCase())
   })
 })
