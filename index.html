@@ -23,7 +23,7 @@
   <div id='loginScreen'>
     <form id='loginForm'>
       <input type='text' id='loginText' placeholder='Choose A Username'>
-      <input type='submit' id='loginButton' value='Submit'>
+      <input type='submit' id='loginButton' value='Submit' class='btn btn-submit'>
     </form>
 
   </div>
@@ -31,19 +31,19 @@
   <div id='waitScreen' class='hidden'>
     <h2>Press the button to play!</h2>
     <h3 id='statusDisplay'></h3>
-    <button id='startBtn'>Start Game!</button>
+    <button id='startBtn' class='btn btn-submit'>Start Game!</button>
   </div>
 
   <div id='fightScreen' class='hidden'>
     <div class="row">
       <div id='user1Area' class='col-4 bg-secondary border border-black'>
-        <div id='user1Name'>Name:</div>
+        <div id='user1Name' class='font-weight-bold'>Name:</div>
         <div id='user1Choice' class='hidden'>Choice:</div>
         <label>Wins:</label>
         <div id='user1Wins'></div>
       </div>
       <div id='user2Area' class='col-4 bg-secondary border border-black'>
-        <div id='user2Name'>Name:</div>
+        <div id='user2Name' class='font-weight-bold'>Name:</div>
         <div id='user2Choice' class='hidden'>Choice:</div>
         <label>Wins:</label>
         <div id='user2Wins'></div>
@@ -54,14 +54,14 @@
       </div>
     </div>
     
-    <div id='whoWon'></div>
+    <div id='whoWon' class='font-weight-bold'></div>
     
     <!-- Buttons for gameplay -->
     <div id='rpsButtons' class='row'>
       <div class="col-12">
-        <button id='rockBtn' class='gameplayBtn'>Rock</button>
-        <button id='paperBtn' class='gameplayBtn'>Paper</button>
-        <button id='scissorsBtn' class='gameplayBtn'>Scissors</button>  
+        <button id='rockBtn' class='gameplayBtn btn btn-submit'>Rock</button>
+        <button id='paperBtn' class='gameplayBtn btn btn-submit'>Paper</button>
+        <button id='scissorsBtn' class='gameplayBtn btn btn-submit'>Scissors</button>  
       </div>
     </div>
 

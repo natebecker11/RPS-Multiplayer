@@ -15,6 +15,9 @@ var nameDisplayed = false;
 // var for current connection key
 var curConnectKey = '';
 
+// var for whether a RPS has been chosen
+var rpsChosen = false;
+
 
 
 // function to abbreviate document.queryselector
@@ -69,6 +72,16 @@ activeUsersRef.once('child_added', function(snap) {
   return curConnectKey = snap.key;
 })
 
+
+// listener for when users are deleted after a user disconnects
+database.ref('/currentGame/').on('child_removed', function(child) {
+  // console.log(child.key);
+  if (child.key === 'user1' || child.key === 'user2') {
+    console.log('child removed');
+    resetText('user1Name', 'user1Choice', 'user1Wins', 'user2Name', 'user2Wins', 'user2Choice', 'whoWon', 'tiesWins')
+      rpsChosen = false;
+  }
+})
 // listener for when a child is removed from the connections list
 activeUsersRef.on('child_removed', function(child) {
   console.log(child.key);
@@ -87,6 +100,7 @@ activeUsersRef.on('child_removed', function(child) {
   // console.log(user1Key + ' ' + user2Key);
   if (curConnectKey === user2Key || curConnectKey === user1Key) {
     
+    
     if (authUserNum()) {
       docQS('#fightScreen').classList.add('hidden')
       docQS('#waitScreen').classList.remove('hidden')
@@ -94,6 +108,8 @@ activeUsersRef.on('child_removed', function(child) {
       // docQS('#whoWon').textContent = '';
       docQS('#startBtn').disabled = false;
       resetText('user1Name', 'user1Choice', 'user1Wins', 'user2Name', 'user2Wins', 'user2Choice', 'whoWon', 'tiesWins')
+      rpsChosen = false;
+      
       
     }
     database.ref('/currentGame/user1/').remove();
@@ -235,6 +251,7 @@ var evalWinner = function() {
     // array for resolving gameplay
     var gameArray = ['paper', 'scissors', 'rock']
     if (choice1 === 'rock' && choice2 === 'paper') {return 'user2'}
+    if (choice1 === 'paper' && choice2 === 'rock') {return 'user1'}
     if (gameArray.indexOf(choice1) < gameArray.indexOf(choice2)) {return 'user2'}
     else return 'user1';
   }
@@ -250,7 +267,7 @@ database.ref('/currentGame/').on('value', function(snap) {
       return gameRunningFlag = snap2.val()['running'];
     }
   })
-  if (current.user1 && current.user2 && !gameRunningFlag) {
+  if (current.user1 && current.user2 && authUserNum()) {
     database.ref('/gameRunningFlag/').set({
       running: true
     })
@@ -290,8 +307,22 @@ var keepScore = function(winner) {
 
 // database listener for gameplay
 database.ref('/currentGame/choices/').on('value', function(snap) {
+  console.log('rpsChosen: ' + rpsChosen)
+  // if choices isn't there
+  if (!snap.val()) {
+    document.querySelectorAll('.gameplayBtn').forEach(function(element) {
+      element.disabled = false;
+    })
+  }
+  // if only one player has chosen and this is the user who chose
+  if (snap.val() && Object.keys(snap.val()).length === 1 && rpsChosen) {
+    document.querySelectorAll('.gameplayBtn').forEach(function(element) {
+      element.disabled = true;
+    })
+  }
   // if both players have made a choice  
   if (snap.val() && Object.keys(snap.val()).length === 2) {
+    rpsChosen = false;
     
     // run the rps eval function, binding the result to winner
     var winner = evalWinner();
@@ -369,6 +400,8 @@ var gameplayBtns = document.querySelectorAll('.gameplayBtn')
 gameplayBtns.forEach(function(element) {
   // add an onclick event listener to all
   element.addEventListener('click', function() {
+    // flag that this user has chosen
+    rpsChosen = true;
     // run the RPS function on the value of the button
     chooseRPS(this.textContent.toLowerCase())
   })
